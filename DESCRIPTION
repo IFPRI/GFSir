@@ -1,0 +1,16 @@
+Package: GFSir
+Type: Package
+Title: Global Food Security analysis using IMPACT model and R
+Version: 0.0.1
+Authors@R: c(
+    person("Abhijeet", "Mishra", , "A.Mishra@cgiar.org", role = c("aut", "cre"))
+    )
+Description: Global Food Security analysis using IMPACT model and R.
+License: GPL (>= 3)
+Encoding: UTF-8
+RoxygenNote: 7.2.3
+Imports: 
+    readxl (>= 1.4.2)
+Remotes:
+    github::eddelbuettel/drat
+Additional_repositories: https://ifpri.github.io/drat
