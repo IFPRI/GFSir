@@ -1,4 +1,4 @@
-#' Title
+#' Results for population and GDP
 #'
 #' @param gdx GDX of an IMPACT run
 #'

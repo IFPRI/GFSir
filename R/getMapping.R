@@ -22,7 +22,7 @@ getMapping <- function(type = "region", file = "mapping.xlsx") {
             warning("Duplicates in mapping")
             warning("Returning DUPLICATED mapping\n")
         } else {
-            cat("Returning unique mapping\n")
+            message("working with unique mapping\n")
         }
     }
 
@@ -41,6 +41,6 @@ getMapping <- function(type = "region", file = "mapping.xlsx") {
                                      .name_repair = "unique")
     }
     if (!is.null(mapping)) duplicated_message(mapping)
-    if (is.null(mapping)) warning("No mapping created. Returning NULL.")
+    if (is.null(mapping)) message("No mapping created. Returning NULL.")
     return(mapping)
 }

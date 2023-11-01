@@ -2,7 +2,7 @@
 % Please edit documentation in R/group1.R
 \name{group1}
 \alias{group1}
-\title{Title}
+\title{Results for population and GDP}
 \usage{
 group1(gdx)
 }
@@ -13,7 +13,7 @@ group1(gdx)
 dataframe results for population and GDP
 }
 \description{
-Title
+Results for population and GDP
 }
 \examples{
 \dontrun{
