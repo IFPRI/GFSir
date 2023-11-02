@@ -9,6 +9,7 @@
 #' \dontrun{
 #' add_regions()
 #' }
+#' @author Abhijeet Mishra
 add_regions <- function(df) {
     origin_cols <- colnames(df)
     # Find regional mapping

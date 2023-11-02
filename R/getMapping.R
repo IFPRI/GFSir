@@ -13,6 +13,7 @@
 #' \dontrun{
 #' getMapping()
 #' }
+#' @author Abhijeet Mishra
 getMapping <- function(type = "region", file = "mapping.xlsx") {
     mapping <- NULL
     mapping_file <- system.file("extdata", file, package = "GFSir")

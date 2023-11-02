@@ -14,6 +14,7 @@
 #' \dontrun{
 #' create_identifier_columns()
 #' }
+#' @author Abhijeet Mishra
 create_identifier_columns <- function(df, col = "scenario",
                                       into = c("SSP", "GCM", "RCP", "CO2"),
                                       sep = "-",

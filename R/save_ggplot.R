@@ -17,6 +17,7 @@
 #' \dontrun{
 #' save_ggplot()
 #' }
+#' @author Abhijeet Mishra
 save_ggplot <- function(p,
                         dest = tempdir(), plot_name = "dummy", ext = "png",
                         units = "in", width = 7, height = 7, dpi = 300) {

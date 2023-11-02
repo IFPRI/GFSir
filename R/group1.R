@@ -11,6 +11,7 @@
 #' \dontrun{
 #' group1()
 #' }
+#' @author Abhijeet Mishra
 group1 <- function(gdx) {
     value <- NULL
     scenario <- clean_filename(gdx)

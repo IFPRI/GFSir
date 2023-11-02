@@ -8,6 +8,7 @@
 #' \dontrun{
 #' add_crops()
 #' }
+#' @author Abhijeet Mishra
 add_crops <- function(df) {
     origin_cols <- colnames(df)
     # Find regional mapping

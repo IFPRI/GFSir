@@ -9,6 +9,7 @@
 #' \dontrun{
 #' clean_filename()
 #' }
+#' @author Abhijeet Mishra
 clean_filename <- function(gdx) {
     name <- gsub(pattern = "\\.gdx", replacement = "", x = basename(gdx))
     name <- gsub(pattern = "379", replacement = "NoCO2", x = name)

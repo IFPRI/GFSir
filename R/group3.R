@@ -16,6 +16,7 @@
 #' \dontrun{
 #' group3()
 #' }
+#' @author Abhijeet Mishra
 group3 <- function(gdx, indicator = "population") {
     value <- NULL
     scenario <- clean_filename(gdx)
