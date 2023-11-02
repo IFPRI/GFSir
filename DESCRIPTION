@@ -1,10 +1,13 @@
 Package: GFSir
 Type: Package
 Title: Global Food Security analysis using IMPACT model and R
-Version: 1.1.0
-Authors@R: c(
-    person("Abhijeet", "Mishra", , "A.Mishra@cgiar.org", role = c("aut", "cre"))
-    )
+Version: 2.0.0
+Authors@R: 
+  c(person(given = "Abhijeet",
+           family = "Mishra",
+           role = c("aut", "cre"),
+           email = "A.Mishra@cgiar.org",
+           comment = c(ORCID = "0000-0002-8287-9922")))
 Description: Global Food Security analysis using IMPACT model and R.
 License: GPL (>= 3)
 Encoding: UTF-8
