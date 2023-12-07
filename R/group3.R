@@ -235,7 +235,7 @@ group3 <- function(gdx, indicator = "population") {
 
     .demand <- function() {
         cty <- yrs <- NULL
-        df <- readGDX(gdx = gdx, name = "QDX0", quick_df = FALSE)$data
+        df <- readGDX(gdx = gdx, name = "QFX0", quick_df = FALSE)$data
 
         df$scenario <- scenario
 

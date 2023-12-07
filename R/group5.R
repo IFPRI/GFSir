@@ -47,7 +47,7 @@ group5 <- function(gdx) {
         arrange("yrs")
 
     df$value <- round(df$risk_pop, 2)
-    df$share <- round(df$risk_pop / df$pop, 2)
+    df$share <- round(df$risk_pop / df$pop, 4)
     df$description <-
         "Population at risk of hunger"
     df <- df[, !colnames(df) %in% c("risk_pop", "pop")]
