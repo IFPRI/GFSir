@@ -4,10 +4,12 @@
 \alias{add_regions}
 \title{add_regions}
 \usage{
-add_regions(df)
+add_regions(df, mapping = "mapping.xlsx")
 }
 \arguments{
 \item{df}{dataframe with "cty" column}
+
+\item{mapping}{Mapping file for regions}
 }
 \value{
 Cleaned scenario name

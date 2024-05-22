@@ -4,7 +4,7 @@
 \alias{group3}
 \title{Group 3 data processing (Area, yields, production, prices, net trade, demand)}
 \usage{
-group3(gdx, indicator = "population")
+group3(gdx, indicator = "population", mapping = "mapping.xlsx")
 }
 \arguments{
 \item{gdx}{GDX of an IMPACT run}
@@ -12,6 +12,8 @@ group3(gdx, indicator = "population")
 \item{indicator}{Which indicator to return in aggregated format. Defaults to
 "population". Available settings are "area", "production", "yield", "prices",
 "trade", "demand", "population" and "perCapDemand".}
+
+\item{mapping}{mapping file name}
 }
 \value{
 dataframe results for Area, yields, production, prices, net trade,

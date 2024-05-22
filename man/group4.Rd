@@ -4,10 +4,12 @@
 \alias{group4}
 \title{Results for per capital kcal availability}
 \usage{
-group4(gdx)
+group4(gdx, mapping = "mapping.xlsx")
 }
 \arguments{
 \item{gdx}{GDX of an IMPACT run}
+
+\item{mapping}{mapping file name}
 }
 \value{
 dataframe results for per capital kcal availability

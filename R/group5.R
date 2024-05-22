@@ -1,6 +1,7 @@
 #' Results for population at risk of hunger
 #'
 #' @param gdx GDX of an IMPACT run
+#' @param mapping Mapping file for regions
 #'
 #' @return Results for population at risk of hunger
 #' @importFrom dplyr group_by_at summarise
@@ -11,7 +12,7 @@
 #' group5()
 #' }
 #' @author Abhijeet Mishra
-group5 <- function(gdx) {
+group5 <- function(gdx, mapping = "mapping.xlsx") {
 
     scenario <- clean_filename(gdx)
 
@@ -32,7 +33,7 @@ group5 <- function(gdx) {
     df <- create_identifier_columns(df)
 
     # Get regions
-    df <- add_regions(df)
+    df <- add_regions(df, mapping = mapping)
 
     # Do aggregation <- everything is an "absoulte" quantity so we can directly
     # sum over everything when making "groups"

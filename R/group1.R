@@ -1,7 +1,7 @@
 #' Results for population and GDP
 #'
 #' @param gdx GDX of an IMPACT run
-#'
+#' @param mapping mapping file name
 #' @return dataframe results for population and GDP
 #' @importFrom DOORMAT readGDX
 #' @import dplyr
@@ -12,7 +12,7 @@
 #' group1()
 #' }
 #' @author Abhijeet Mishra
-group1 <- function(gdx) {
+group1 <- function(gdx, mapping = "mapping.xlsx") {
     value <- NULL
     scenario <- clean_filename(gdx)
 
@@ -32,7 +32,7 @@ group1 <- function(gdx) {
     df$value <- round(df$value)
 
     # Get regions
-    df <- add_regions(df)
+    df <- add_regions(df, mapping = mapping)
 
     # Do aggregation <- everything is an "absoulte" quantity so we can directly
     # sum over everything when making "groups"

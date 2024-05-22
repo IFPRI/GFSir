@@ -1,6 +1,7 @@
 #' add_regions
 #'
 #' @param df dataframe with "cty" column
+#' @param mapping Mapping file for regions
 #'
 #' @return Cleaned scenario name
 #' @export
@@ -10,10 +11,10 @@
 #' add_regions()
 #' }
 #' @author Abhijeet Mishra
-add_regions <- function(df) {
+add_regions <- function(df, mapping = "mapping.xlsx") {
     origin_cols <- colnames(df)
     # Find regional mapping
-    map <- getMapping(type = "region")
+    map <- getMapping(type = "region", file = mapping)
 
     # Merge with data on cty level
     df <- merge(df, map)

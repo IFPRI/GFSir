@@ -4,10 +4,12 @@
 \alias{group5}
 \title{Results for population at risk of hunger}
 \usage{
-group5(gdx)
+group5(gdx, mapping = "mapping.xlsx")
 }
 \arguments{
 \item{gdx}{GDX of an IMPACT run}
+
+\item{mapping}{Mapping file for regions}
 }
 \value{
 Results for population at risk of hunger

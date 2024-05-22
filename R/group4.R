@@ -1,6 +1,7 @@
 #' Results for per capital kcal availability
 #'
 #' @param gdx GDX of an IMPACT run
+#' @param mapping mapping file name
 #'
 #' @return dataframe results for per capital kcal availability
 #' @importFrom DOORMAT readGDX
@@ -12,7 +13,7 @@
 #' group4()
 #' }
 #' @author Abhijeet Mishra
-group4 <- function(gdx) {
+group4 <- function(gdx, mapping = "mapping.xlsx") {
     c <- cty <- yrs <- value <- NULL
     scenario <- clean_filename(gdx)
 
@@ -48,7 +49,7 @@ group4 <- function(gdx) {
     df <- create_identifier_columns(df)
 
     # Get regions
-    df <- add_regions(df)
+    df <- add_regions(df, mapping = mapping)
 
     # Get Crops
     df <- add_crops(df)
@@ -63,7 +64,7 @@ group4 <- function(gdx) {
         arrange("yrs")
 
     # Population aggregation
-    pop_agg <- add_regions(pop)
+    pop_agg <- add_regions(df, mapping = mapping)
 
     cols <- c("yrs", "region")
 

@@ -4,10 +4,12 @@
 \alias{group1}
 \title{Results for population and GDP}
 \usage{
-group1(gdx)
+group1(gdx, mapping = "mapping.xlsx")
 }
 \arguments{
 \item{gdx}{GDX of an IMPACT run}
+
+\item{mapping}{mapping file name}
 }
 \value{
 dataframe results for population and GDP

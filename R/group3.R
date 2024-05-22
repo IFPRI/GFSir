@@ -4,6 +4,7 @@
 #' @param indicator Which indicator to return in aggregated format. Defaults to
 #' "population". Available settings are "area", "production", "yield", "prices",
 #' "trade", "demand", "population" and "perCapDemand".
+#' @param mapping mapping file name
 #'
 #' @return dataframe results for Area, yields, production, prices, net trade,
 #' demand
@@ -17,7 +18,7 @@
 #' group3()
 #' }
 #' @author Abhijeet Mishra
-group3 <- function(gdx, indicator = "population") {
+group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
     value <- NULL
     scenario <- clean_filename(gdx)
 
@@ -33,7 +34,7 @@ group3 <- function(gdx, indicator = "population") {
         # Clean
         df <- create_identifier_columns(df)
         # Get regions
-        df <- add_regions(df)
+        df <- add_regions(df, mapping = mapping)
         # Get crops
         df <- add_crops(df)
         # Sort
@@ -91,7 +92,7 @@ group3 <- function(gdx, indicator = "population") {
         # Clean
         df <- create_identifier_columns(df)
         # Get regions
-        df <- add_regions(df)
+        df <- add_regions(df, mapping = mapping)
         # Get crops
         df <- add_crops(df)
         # Sort
@@ -160,7 +161,7 @@ group3 <- function(gdx, indicator = "population") {
         # Clean
         df <- create_identifier_columns(df)
         # Get regions
-        df <- add_regions(df)
+        df <- add_regions(df, mapping = mapping)
         # Get crops
         df <- add_crops(df)
         # Sort
@@ -212,7 +213,7 @@ group3 <- function(gdx, indicator = "population") {
         # Clean
         df <- create_identifier_columns(df)
         # Get regions
-        df <- add_regions(df)
+        df <- add_regions(df, mapping = mapping)
         # Get crops
         df <- add_crops(df)
         # Sort
@@ -242,7 +243,7 @@ group3 <- function(gdx, indicator = "population") {
         # Clean
         df <- create_identifier_columns(df)
         # Get regions
-        df <- add_regions(df)
+        df <- add_regions(df, mapping = mapping)
         # Get crops
         df <- add_crops(df)
         # Sort
@@ -272,7 +273,7 @@ group3 <- function(gdx, indicator = "population") {
         # Clean
         df <- create_identifier_columns(df)
         # Get regions
-        df <- add_regions(df)
+        df <- add_regions(df, mapping = mapping)
         # Sort
         df <- df %>%
             arrange(cty, yrs)
