@@ -64,7 +64,7 @@ group4 <- function(gdx, mapping = "mapping.xlsx") {
         arrange("yrs")
 
     # Population aggregation
-    pop_agg <- add_regions(df, mapping = mapping)
+    pop_agg <- add_regions(pop, mapping = mapping)
 
     cols <- c("yrs", "region")
 

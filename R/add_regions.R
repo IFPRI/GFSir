@@ -24,5 +24,6 @@ add_regions <- function(df, mapping = "mapping.xlsx") {
         pivot_longer(cols = colnames(df)[!colnames(df) %in% origin_cols],
                      names_to = "reg_desc",
                      values_to = "region")
+    df <- df[!is.na(df$region), ]
     return(df)
 }
