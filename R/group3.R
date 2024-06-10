@@ -3,7 +3,7 @@
 #' @param gdx GDX of an IMPACT run
 #' @param indicator Which indicator to return in aggregated format. Defaults to
 #' "population". Available settings are "area", "production", "yield", "prices",
-#' "trade", "demand", "population" and "perCapDemand".
+#' "trade", "demand", "population", "perCapDemand", "bluewater" and "greenwater"
 #' @param mapping mapping file name
 #'
 #' @return dataframe results for Area, yields, production, prices, net trade,
@@ -308,6 +308,93 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         df <- df[, colnames(demand)]
     }
 
+    .bluewater <- function() {
+        j <- cty <- riverbasin <- yrs <- NULL
+        df <- readGDX(gdx = gdx,
+                      name = "bluewaterfpux0",
+                      quick_df = FALSE)$data
+        df$description <- "Blue water or water from irrigation (cubic km)"
+        df$scenario <- scenario
+
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+        # Get crops
+        df <- add_crops(df)
+        # Sort
+        df <- df %>%
+            arrange(j, cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .greenwater <- function() {
+        j <- cty <- riverbasin <- yrs <- NULL
+        df <- readGDX(gdx = gdx,
+                      name = "greenwaterfpux0",
+                      quick_df = FALSE)$data
+        df$description <- "Green water or water from precipitation (cubic km)"
+        df$scenario <- scenario
+
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+        # Get crops
+        df <- add_crops(df)
+        # Sort
+        df <- df %>%
+            arrange(j, cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+        names(df)[names(df) %in% "lnd"] <- "fctr"
+        cols <- c("description", "yrs", "fctr",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        # Sum over factor (irrigation)
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df2 <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+        df2$fctr <- "ar+rf"
+
+        df <- rbind(df, df2)
+
+        return(df)
+    }
+
     if (indicator == "area")         return(.area())
     if (indicator == "production")   return(.production())
     if (indicator == "yield")        return(.yield())
@@ -316,4 +403,6 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
     if (indicator == "demand")       return(.demand())
     if (indicator == "population")   return(.population())
     if (indicator == "perCapDemand") return(.perCapDemand())
+    if (indicator == "bluewater")    return(.bluewater())
+    if (indicator == "greenwater")   return(.greenwater())
 }

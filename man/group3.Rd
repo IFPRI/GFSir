@@ -11,7 +11,7 @@ group3(gdx, indicator = "population", mapping = "mapping.xlsx")
 
 \item{indicator}{Which indicator to return in aggregated format. Defaults to
 "population". Available settings are "area", "production", "yield", "prices",
-"trade", "demand", "population" and "perCapDemand".}
+"trade", "demand", "population", "perCapDemand", "bluewater" and "greenwater"}
 
 \item{mapping}{mapping file name}
 }
