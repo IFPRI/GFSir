@@ -52,7 +52,7 @@ group4 <- function(gdx, mapping = "mapping.xlsx") {
     df <- add_regions(df, mapping = mapping)
 
     # Get Crops
-    df <- add_crops(df)
+    df <- add_crops(df, mapping = mapping)
 
     # Do aggregation <- everything is an "absoulte" quantity so we can directly
     # sum over everything when making "groups"

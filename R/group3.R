@@ -7,7 +7,7 @@
 #' @param mapping mapping file name
 #'
 #' @return dataframe results for Area, yields, production, prices, net trade,
-#' demand
+#' demand, demand_all (demand from all components)
 #' @importFrom DOORMAT readGDX
 #' @import dplyr
 #' @importFrom tidyr separate_wider_delim
@@ -36,7 +36,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         # Get regions
         df <- add_regions(df, mapping = mapping)
         # Get crops
-        df <- add_crops(df)
+        df <- add_crops(df, mapping = mapping)
         # Sort
         df <- df %>%
             arrange(j, cty, riverbasin, yrs)
@@ -94,7 +94,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         # Get regions
         df <- add_regions(df, mapping = mapping)
         # Get crops
-        df <- add_crops(df)
+        df <- add_crops(df, mapping = mapping)
         # Sort
         df <- df %>%
             arrange(j, cty, riverbasin, yrs)
@@ -120,6 +120,64 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
             summarise(value = sum(value)) %>%
             arrange("yrs")
         df2$fctr <- "ar+rf"
+        df <- rbind(df, df2)
+
+        return(df)
+    }
+
+    .production_anml <- function() {
+        j <- cty <- riverbasin <- yrs <- NULL
+        nmbr  <- readGDX(gdx = gdx, name = "AnmlNumX0", quick_df = FALSE)$data
+        yield <- readGDX(gdx = gdx, name = "AnmlYldX0",  quick_df = FALSE)$data
+
+        df <- merge(nmbr, yield,
+                    by = colnames(
+                        nmbr)[!colnames(nmbr) %in% c("description", "value")],
+                    suffixes = c(".nmbr", ".yield"))
+        df <- df[, colnames(df)[
+            !startsWith(x = colnames(df), prefix = "description")]]
+        df$description <- "Animal production (000 mt)"
+        df$value <- df$value.nmbr * df$value.yield
+
+        # Set scenario
+        df$scenario <- scenario
+
+        # Split FPU
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+        # Get crops
+        df <- add_crops(df, mapping = mapping)
+        # Sort
+        df <- df %>%
+            arrange(j, cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+        cols <- c("description", "yrs", "lvsys",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value)) %>%
+            arrange("yrs")
+
+        # Sum over factor (irrigation)
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df2 <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value)) %>%
+            arrange("yrs")
+        df2$lvsys <- "All"
         df <- rbind(df, df2)
 
         return(df)
@@ -163,7 +221,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         # Get regions
         df <- add_regions(df, mapping = mapping)
         # Get crops
-        df <- add_crops(df)
+        df <- add_crops(df, mapping = mapping)
         # Sort
         df <- df %>%
             arrange(c, cty, yrs)
@@ -193,8 +251,10 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df <- df %>%
             group_by_at(cols) %>%
-            summarise(value = round(value[description == "Demand Value"] /
-                                        value[description == "Demand"])) %>%
+            summarise(value = ifelse(value[description == "Demand"],
+                                     round(value[description == "Demand Value"] /
+                                               value[description == "Demand"]),
+                                     NA)) %>%
             arrange("yrs")
         df$description <- gsub(pattern = "world ", replacement = "",
                                x = unique(prices$description))
@@ -215,7 +275,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         # Get regions
         df <- add_regions(df, mapping = mapping)
         # Get crops
-        df <- add_crops(df)
+        df <- add_crops(df, mapping = mapping)
         # Sort
         df <- df %>%
             arrange(c, cty, yrs)
@@ -245,7 +305,37 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         # Get regions
         df <- add_regions(df, mapping = mapping)
         # Get crops
-        df <- add_crops(df)
+        df <- add_crops(df, mapping = mapping)
+        # Sort
+        df <- df %>%
+            arrange(c, cty, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .demand_all <- function() {
+        cty <- yrs <- NULL
+        df <- readGDX(gdx = gdx, name = "QDX0", quick_df = FALSE)$data
+
+        df$scenario <- scenario
+
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+        # Get crops
+        df <- add_crops(df, mapping = mapping)
         # Sort
         df <- df %>%
             arrange(c, cty, yrs)
@@ -325,7 +415,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         # Get regions
         df <- add_regions(df, mapping = mapping)
         # Get crops
-        df <- add_crops(df)
+        df <- add_crops(df, mapping = mapping)
         # Sort
         df <- df %>%
             arrange(j, cty, riverbasin, yrs)
@@ -362,7 +452,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         # Get regions
         df <- add_regions(df, mapping = mapping)
         # Get crops
-        df <- add_crops(df)
+        df <- add_crops(df, mapping = mapping)
         # Sort
         df <- df %>%
             arrange(j, cty, riverbasin, yrs)
@@ -397,10 +487,12 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
     if (indicator == "area")         return(.area())
     if (indicator == "production")   return(.production())
+    if (indicator == "production_anml")   return(.production_anml())
     if (indicator == "yield")        return(.yield())
     if (indicator == "prices")       return(.prices())
     if (indicator == "trade")        return(.nettrade())
     if (indicator == "demand")       return(.demand())
+    if (indicator == "demand_all")   return(.demand_all())
     if (indicator == "population")   return(.population())
     if (indicator == "perCapDemand") return(.perCapDemand())
     if (indicator == "bluewater")    return(.bluewater())

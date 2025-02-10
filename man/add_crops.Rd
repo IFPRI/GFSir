@@ -4,10 +4,12 @@
 \alias{add_crops}
 \title{add_crops}
 \usage{
-add_crops(df)
+add_crops(df, mapping = "mapping.xlsx")
 }
 \arguments{
 \item{df}{dataframe with "j" or "c" column}
+
+\item{mapping}{Mapping file which contains crops/activities}
 }
 \value{
 Cleaned scenario name

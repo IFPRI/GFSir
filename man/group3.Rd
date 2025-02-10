@@ -17,7 +17,7 @@ group3(gdx, indicator = "population", mapping = "mapping.xlsx")
 }
 \value{
 dataframe results for Area, yields, production, prices, net trade,
-demand
+demand, demand_all (demand from all components)
 }
 \description{
 Group 3 data processing (Area, yields, production, prices, net trade, demand)

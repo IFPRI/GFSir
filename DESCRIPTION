@@ -11,13 +11,13 @@ Authors@R:
 Description: Global Food Security analysis using IMPACT model and R.
 License: GPL (>= 3)
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 Imports: 
     readxl (>= 1.4.3),
     DOORMAT (>= 3.14.1),
-    dplyr (>= 1.1.3),
-    tidyr (>= 1.3.0),
-    ggplot2 (>= 3.4.4)
+    dplyr (>= 1.1.4),
+    tidyr (>= 1.3.1),
+    ggplot2 (>= 3.5.1)
 Remotes:
     github::eddelbuettel/drat
 Additional_repositories: https://ifpri.github.io/drat
