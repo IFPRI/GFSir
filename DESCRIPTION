@@ -1,7 +1,7 @@
 Package: GFSir
 Type: Package
 Title: Global Food Security analysis using IMPACT model and R
-Version: 2.5.0
+Version: 3.0.0
 Authors@R:
     c(person(given = "Abhijeet",
              family = "Mishra",
