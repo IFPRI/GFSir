@@ -199,6 +199,56 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         df <- df[, colnames(area)]
     }
 
+    .animalnumbers <- function() {
+        j <- cty <- riverbasin <- yrs <- NULL
+        df <- readGDX(gdx = gdx, name = "anmlnumx0", quick_df = FALSE)$data
+        df$scenario <- scenario
+
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+        # Get crops
+        df <- add_crops(df, mapping = mapping)
+        # Sort
+        df <- df %>%
+            arrange(j, cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .yield_anml <- function() {
+        numbers <- .animalnumbers()
+        production <- .production_anml()
+        production <- production[production$lvsys %in% "All", ]
+        df <- merge(numbers,
+                    production,
+                    by = c("yrs",
+                           "ssp", "gcm", "rcp", "co2",
+                           "region", "name"),
+                    suffixes = c(".number", ".production"))
+        df <- df[, colnames(df)[
+            !startsWith(x = colnames(df), prefix = "description")]]
+        df$description <- "Animal Yields (mt per animal)"
+        df$value <- df$value.production / df$value.number
+        df <- df[, colnames(numbers)]
+    }
+
     .prices <- function() {
         cty <- yrs <- description <- NULL
         prices <- readGDX(gdx = gdx, name = "PWX0", quick_df = FALSE)$data
@@ -254,6 +304,71 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
             summarise(value = ifelse(value[description == "Demand"],
                                      round(value[description == "Demand Value"] /
                                                value[description == "Demand"]),
+                                     NA)) %>%
+            arrange("yrs")
+        df$description <- gsub(pattern = "world ", replacement = "",
+                               x = unique(prices$description))
+        df <- df[, c(colnames(df)[length(colnames(df))],
+                     colnames(df)[-length(colnames(df))])]
+
+        return(df)
+    }
+
+    .netprices <- function() {
+        j <- cty <- yrs <- description <- NULL
+        prices <- readGDX(gdx = gdx, name = "PNETX0", quick_df = FALSE)$data
+        prod <- readGDX(gdx = gdx, name = "QSX0", quick_df = FALSE)$data
+        value  <- merge(prod, prices, by = c("j", "cty", "yrs", "model"),
+                        suffixes = c(".prod", ".net_price"))
+        value <- value[, colnames(value)[
+            !startsWith(x = colnames(value), prefix = "description")]]
+        value$value <- value$value.prod * value$value.net_price
+        value <- value[, colnames(value)[
+            !startsWith(x = colnames(value), prefix = "value.")]]
+        value$description <- "Solution total VALUE for commodity (000 2005USD)"
+
+        df <- rbind(value, prod)[, colnames(prod)]
+
+        df$scenario <- scenario
+
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+        # Get crops
+        df <- add_crops(df, mapping = mapping)
+        # Sort
+        df <- df %>%
+            arrange(j, cty, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        # Do price calculation - kick out description
+        df$description <- as.factor(df$description)
+        levels(df$description)
+        exist_factors <- c("Solution total production (000 mt)",
+                           "Solution total VALUE for commodity (000 2005USD)")
+        df$description <- factor(df$description,
+                                 levels = exist_factors,
+                                 labels = c("prod", "prod Value"))
+        cols <- c("yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = ifelse(value[description == "prod"],
+                                     round(value[description == "prod Value"] /
+                                               value[description == "prod"]),
                                      NA)) %>%
             arrange("yrs")
         df$description <- gsub(pattern = "world ", replacement = "",
@@ -485,16 +600,19 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         return(df)
     }
 
-    if (indicator == "area")         return(.area())
-    if (indicator == "production")   return(.production())
-    if (indicator == "production_anml")   return(.production_anml())
-    if (indicator == "yield")        return(.yield())
-    if (indicator == "prices")       return(.prices())
-    if (indicator == "trade")        return(.nettrade())
-    if (indicator == "demand")       return(.demand())
-    if (indicator == "demand_all")   return(.demand_all())
-    if (indicator == "population")   return(.population())
-    if (indicator == "perCapDemand") return(.perCapDemand())
-    if (indicator == "bluewater")    return(.bluewater())
-    if (indicator == "greenwater")   return(.greenwater())
+    if (indicator == "area")            return(.area())
+    if (indicator == "production")      return(.production())
+    if (indicator == "production_anml") return(.production_anml())
+    if (indicator == "animalnumbers")   return(.animalnumbers())
+    if (indicator == "yield")           return(.yield())
+    if (indicator == "yield_anml")      return(.yield_anml())
+    if (indicator == "prices")          return(.prices())
+    if (indicator == "netprices")       return(.netprices())
+    if (indicator == "trade")           return(.nettrade())
+    if (indicator == "demand")          return(.demand())
+    if (indicator == "demand_all")      return(.demand_all())
+    if (indicator == "population")      return(.population())
+    if (indicator == "perCapDemand")    return(.perCapDemand())
+    if (indicator == "bluewater")       return(.bluewater())
+    if (indicator == "greenwater")      return(.greenwater())
 }

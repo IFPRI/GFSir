@@ -5,6 +5,7 @@
 #'
 #' @return dataframe results for per capital kcal availability
 #' @importFrom DOORMAT readGDX
+#' @importFrom collapse join
 #' @import dplyr
 #' @export
 #'
@@ -38,9 +39,9 @@ group4 <- function(gdx, mapping = "mapping.xlsx") {
     pop <- readGDX(gdx = gdx, name = "POPX0", quick_df = TRUE)$data
 
     # Merge pckcalC and population
-    df <- merge(pckcalC, pop,
-                by = c("cty", "yrs"),
-                suffixes = c(".pckcalC", ".population"))
+    df <- join(pckcalC, pop,
+                on = c("cty", "yrs"),
+                suffix = c(".pckcalC", ".population"))
     df$value <- df$value.pckcalC * df$value.population
     df$value <- round(df$value, 2)
 
@@ -75,9 +76,9 @@ group4 <- function(gdx, mapping = "mapping.xlsx") {
 
     # Bring back aggregated "total calories" and "population" together
 
-    df <- merge(df, pop_agg,
-                by = c("yrs", "region"),
-                suffixes = c(".TKcal", ".population"))
+    df <- join(df, pop_agg,
+                on = c("yrs", "region"),
+                suffix = c(".TKcal", ".population"))
     df$value <- df$value.TKcal / df$value.population
     df$description <-
         "per capita calorie by commodity (KCal per person per day)"
