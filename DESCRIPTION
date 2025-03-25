@@ -1,7 +1,7 @@
 Package: GFSir
 Type: Package
 Title: Global Food Security analysis using IMPACT model and R
-Version: 3.0.0
+Version: 3.1.0
 Authors@R:
     c(person(given = "Abhijeet",
              family = "Mishra",
@@ -17,7 +17,8 @@ Imports:
     DOORMAT (>= 3.14.1),
     dplyr (>= 1.1.4),
     tidyr (>= 1.3.1),
-    ggplot2 (>= 3.5.1)
+    ggplot2 (>= 3.5.1),
+    collapse (>= 2.0.10)
 Remotes:
     github::eddelbuettel/drat
 Additional_repositories: https://ifpri.github.io/drat
