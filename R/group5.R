@@ -5,6 +5,7 @@
 #'
 #' @return Results for population at risk of hunger
 #' @importFrom dplyr group_by_at summarise
+#' @importFrom collapse join
 #' @export
 #'
 #' @examples

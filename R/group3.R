@@ -9,6 +9,7 @@
 #' @return dataframe results for Area, yields, production, prices, net trade,
 #' demand, demand_all (demand from all components)
 #' @importFrom DOORMAT readGDX
+#' @importFrom collapse join
 #' @import dplyr
 #' @importFrom tidyr separate_wider_delim
 #' @export
@@ -41,6 +42,8 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         df <- df %>%
             arrange(j, cty, riverbasin, yrs)
 
+        df <- df[df$fctr %in% c("air", "arf"), ]
+
         # Do aggregation <- everything is an "absoulte" quantity so we
         # can directly sum over everything when making "groups"
         cols <- c("description", "yrs", "fctr",
@@ -49,7 +52,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
 
         # Sum over factor (irrigation)
@@ -59,7 +62,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df2 <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
         df2$fctr <- "ar+rf"
         df <- rbind(df, df2)
@@ -70,12 +73,15 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
     .production <- function() {
         j <- cty <- riverbasin <- yrs <- NULL
         area  <- readGDX(gdx = gdx, name = "AREAX0", quick_df = FALSE)$data
+        area <- area[area$fctr %in% c("air", "arf"), ]
         yield <- readGDX(gdx = gdx, name = "YLDX0",  quick_df = FALSE)$data
+        yield <- yield[yield$fctr %in% c("air", "arf"), ]
 
-        df <- merge(area, yield,
-                    by = colnames(
+        df <- join(area, yield,
+                    on = colnames(
                         area)[!colnames(area) %in% c("description", "value")],
-                    suffixes = c(".area", ".yield"))
+                    suffix = c(".area", ".yield"),
+                   overid = 0)
         df <- df[, colnames(df)[
             !startsWith(x = colnames(df), prefix = "description")]]
         df$description <- "Crop production (000 mt)"
@@ -107,7 +113,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
 
         # Sum over factor (irrigation)
@@ -117,7 +123,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df2 <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
         df2$fctr <- "ar+rf"
         df <- rbind(df, df2)
@@ -130,10 +136,11 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         nmbr  <- readGDX(gdx = gdx, name = "AnmlNumX0", quick_df = FALSE)$data
         yield <- readGDX(gdx = gdx, name = "AnmlYldX0",  quick_df = FALSE)$data
 
-        df <- merge(nmbr, yield,
-                    by = colnames(
+        df <- join(nmbr, yield,
+                    on = colnames(
                         nmbr)[!colnames(nmbr) %in% c("description", "value")],
-                    suffixes = c(".nmbr", ".yield"))
+                    suffix = c(".nmbr", ".yield"),
+                   overid = 0)
         df <- df[, colnames(df)[
             !startsWith(x = colnames(df), prefix = "description")]]
         df$description <- "Animal production (000 mt)"
@@ -165,7 +172,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
 
         # Sum over factor (irrigation)
@@ -175,7 +182,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df2 <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
         df2$lvsys <- "All"
         df <- rbind(df, df2)
@@ -183,15 +190,49 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         return(df)
     }
 
+    .production_fish <- function() {
+        # Fish only has direct production, no area or number or yield
+        j <- cty <- yrs <- NULL
+        jfish  <- readGDX(gdx = gdx, name = "jfish", quick_df = TRUE)$data$j
+        qsx0 <- readGDX(gdx = gdx, name = "QSX0",  quick_df = FALSE)$data
+        df <- qsx0[qsx0$j %in% jfish, ]
+
+        # Set scenario
+        df$scenario <- scenario
+
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+        # Get crops
+        df <- add_crops(df, mapping = mapping)
+        # Sort
+        df <- df %>%
+            arrange(j, cty, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
     .yield <- function() {
         area <- .area()
         production <- .production()
-        df <- merge(area,
+        df <- join(area,
                     production,
-                    by = c("yrs", "fctr",
+                    on = c("yrs", "fctr",
                            "ssp", "gcm", "rcp", "co2",
                            "region", "name"),
-                    suffixes = c(".area", ".production"))
+                    suffix = c(".area", ".production"))
         df <- df[, colnames(df)[
             !startsWith(x = colnames(df), prefix = "description")]]
         df$description <- "Crop Yields (mt per ha)"
@@ -226,7 +267,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
 
         return(df)
@@ -236,12 +277,12 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         numbers <- .animalnumbers()
         production <- .production_anml()
         production <- production[production$lvsys %in% "All", ]
-        df <- merge(numbers,
+        df <- join(numbers,
                     production,
-                    by = c("yrs",
+                    on = c("yrs",
                            "ssp", "gcm", "rcp", "co2",
                            "region", "name"),
-                    suffixes = c(".number", ".production"))
+                    suffix = c(".number", ".production"))
         df <- df[, colnames(df)[
             !startsWith(x = colnames(df), prefix = "description")]]
         df$description <- "Animal Yields (mt per animal)"
@@ -253,8 +294,8 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         cty <- yrs <- description <- NULL
         prices <- readGDX(gdx = gdx, name = "PWX0", quick_df = FALSE)$data
         demand <- readGDX(gdx = gdx, name = "QDX0", quick_df = FALSE)$data
-        value  <- merge(demand, prices, by = c("c", "yrs", "model"),
-                        suffixes = c(".demand", ".world_price"))
+        value  <- join(demand, prices, on = c("c", "yrs", "model"),
+                        suffix = c(".demand", ".world_price"), overid = 0)
         value <- value[, colnames(value)[
             !startsWith(x = colnames(value), prefix = "description")]]
         value$value <- value$value.demand * value$value.world_price
@@ -284,7 +325,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
 
         # Do price calculation - kick out description
@@ -318,8 +359,8 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         j <- cty <- yrs <- description <- NULL
         prices <- readGDX(gdx = gdx, name = "PNETX0", quick_df = FALSE)$data
         prod <- readGDX(gdx = gdx, name = "QSX0", quick_df = FALSE)$data
-        value  <- merge(prod, prices, by = c("j", "cty", "yrs", "model"),
-                        suffixes = c(".prod", ".net_price"))
+        value  <- join(prod, prices, on = c("j", "cty", "yrs", "model"),
+                        suffix = c(".prod", ".net_price"), overid = 0)
         value <- value[, colnames(value)[
             !startsWith(x = colnames(value), prefix = "description")]]
         value$value <- value$value.prod * value$value.net_price
@@ -403,7 +444,67 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .exports <- function() {
+        cty <- yrs <- NULL
+        df <- readGDX(gdx = gdx, name = "QEX0", quick_df = FALSE)$data
+
+        df$scenario <- scenario
+
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+        # Get crops
+        df <- add_crops(df, mapping = mapping)
+        # Sort
+        df <- df %>%
+            arrange(c, cty, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .imports <- function() {
+        cty <- yrs <- NULL
+        df <- readGDX(gdx = gdx, name = "QMX0", quick_df = FALSE)$data
+
+        df$scenario <- scenario
+
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+        # Get crops
+        df <- add_crops(df, mapping = mapping)
+        # Sort
+        df <- df %>%
+            arrange(c, cty, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region", "name")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
 
         return(df)
@@ -433,7 +534,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
 
         return(df)
@@ -463,7 +564,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
 
         return(df)
@@ -491,7 +592,7 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
 
         df <- df %>%
             group_by_at(cols) %>%
-            summarise(value = sum(value)) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
             arrange("yrs")
 
         return(df)
@@ -500,12 +601,12 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
     .perCapDemand <- function() {
         demand <- .demand()
         pop    <- .population()
-        df <- merge(demand,
+        df <- join(demand,
                     pop,
-                    by = c("yrs",
+                    on = c("yrs",
                            "ssp", "gcm", "rcp", "co2",
                            "region"),
-                    suffixes = c(".demand", ".population"))
+                    suffix = c(".demand", ".population"))
         df <- df[, colnames(df)[
             !startsWith(x = colnames(df), prefix = "description")]]
         df$description <- "Per capita demand for commodity (kg per cap)"
@@ -600,19 +701,318 @@ group3 <- function(gdx, indicator = "population", mapping = "mapping.xlsx") {
         return(df)
     }
 
+    .watdemand_dom <- function() {
+        cty <- riverbasin <- yrs <- NULL
+        df <- readGDX(gdx = gdx,
+                      name = "wcd_d_fpu",
+                      quick_df = FALSE)$data
+        df$description <- "Domestic water demand (cubic km)"
+        df$scenario <- scenario
+
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+
+        # Sort
+        df <- df %>%
+            arrange(cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .watdemand_ind <- function() {
+        cty <- riverbasin <- yrs <- NULL
+        df <- readGDX(gdx = gdx,
+                      name = "wci_d_fpu",
+                      quick_df = FALSE)$data
+        df$description <- "Industrial water demand (cubic km)"
+        df$scenario <- scenario
+
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+
+        # Sort
+        df <- df %>%
+            arrange(cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .watdemand_lvs <- function() {
+        cty <- riverbasin <- yrs <- NULL
+        df <- readGDX(gdx = gdx,
+                      name = "wcl_d_fpu",
+                      quick_df = FALSE)$data
+        df$description <- "Livestock water demand (cubic km)"
+        df$scenario <- scenario
+
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+
+        # Sort
+        df <- df %>%
+            arrange(cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .watdemand_irr <- function() {
+        cty <- riverbasin <- yrs <- NULL
+        df <- readGDX(gdx = gdx,
+                      name = "giwd_d_fpu",
+                      quick_df = FALSE)$data
+        df$description <- "Irrigation water demand (cubic km)"
+        df$scenario <- scenario
+
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+
+        # Sort
+        df <- df %>%
+            arrange(cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .watsupply_dom <- function() {
+        cty <- riverbasin <- yrs <- NULL
+        df <- readGDX(gdx = gdx,
+                      name = "wcd_s_fpu",
+                      quick_df = FALSE)$data
+        df$description <- "Domestic water supply (cubic km)"
+        df$scenario <- scenario
+
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+
+        # Sort
+        df <- df %>%
+            arrange(cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .watsupply_ind <- function() {
+        cty <- riverbasin <- yrs <- NULL
+        df <- readGDX(gdx = gdx,
+                      name = "wci_s_fpu",
+                      quick_df = FALSE)$data
+        df$description <- "Industrial water supply (cubic km)"
+        df$scenario <- scenario
+
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+
+        # Sort
+        df <- df %>%
+            arrange(cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .watsupply_lvs <- function() {
+        cty <- riverbasin <- yrs <- NULL
+        df <- readGDX(gdx = gdx,
+                      name = "wcl_s_fpu",
+                      quick_df = FALSE)$data
+        df$description <- "Livestock water supply (cubic km)"
+        df$scenario <- scenario
+
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+
+        # Sort
+        df <- df %>%
+            arrange(cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
+    .watsupply_irr <- function() {
+        cty <- riverbasin <- yrs <- NULL
+        df <- readGDX(gdx = gdx,
+                      name = "giwd_s_fpu",
+                      quick_df = FALSE)$data
+        df$description <- "Irrigation water supply (cubic km)"
+        df$scenario <- scenario
+
+        df <- df |>
+            separate_wider_delim("fpu",
+                                 delim = "_",
+                                 names = c("riverbasin", "cty"))
+        # Clean
+        df <- create_identifier_columns(df)
+        # Get regions
+        df <- add_regions(df, mapping = mapping)
+
+        # Sort
+        df <- df %>%
+            arrange(cty, riverbasin, yrs)
+
+        # Do aggregation <- everything is an "absoulte" quantity so we
+        # can directly sum over everything when making "groups"
+
+        cols <- c("description", "yrs",
+                  "ssp", "gcm", "rcp", "co2",
+                  "region")
+
+        df <- df %>%
+            group_by_at(cols) %>%
+            summarise(value = sum(value, na.rm = TRUE)) %>%
+            arrange("yrs")
+
+        return(df)
+    }
+
     if (indicator == "area")            return(.area())
     if (indicator == "production")      return(.production())
     if (indicator == "production_anml") return(.production_anml())
+    if (indicator == "production_fish") return(.production_fish())
     if (indicator == "animalnumbers")   return(.animalnumbers())
     if (indicator == "yield")           return(.yield())
     if (indicator == "yield_anml")      return(.yield_anml())
     if (indicator == "prices")          return(.prices())
     if (indicator == "netprices")       return(.netprices())
     if (indicator == "trade")           return(.nettrade())
+    if (indicator == "exports")         return(.exports())
+    if (indicator == "imports")         return(.imports())
     if (indicator == "demand")          return(.demand())
     if (indicator == "demand_all")      return(.demand_all())
     if (indicator == "population")      return(.population())
     if (indicator == "perCapDemand")    return(.perCapDemand())
     if (indicator == "bluewater")       return(.bluewater())
     if (indicator == "greenwater")      return(.greenwater())
+    if (indicator == "watdemand_dom")      return(.watdemand_dom())
+    if (indicator == "watdemand_ind")      return(.watdemand_ind())
+    if (indicator == "watdemand_lvs")      return(.watdemand_lvs())
+    if (indicator == "watdemand_irr")      return(.watdemand_irr())
+    if (indicator == "watsupply_dom")      return(.watsupply_dom())
+    if (indicator == "watsupply_ind")      return(.watsupply_ind())
+    if (indicator == "watsupply_lvs")      return(.watsupply_lvs())
+    if (indicator == "watsupply_irr")      return(.watsupply_irr())
 }

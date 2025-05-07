@@ -6,6 +6,7 @@
 #' @return Cleaned scenario name
 #' @export
 #' @importFrom tidyr pivot_longer
+#' @importFrom collapse join
 #' @examples
 #' \dontrun{
 #' add_regions()
@@ -17,7 +18,7 @@ add_regions <- function(df, mapping = "mapping.xlsx") {
     map <- getMapping(type = "region", file = mapping)
 
     # Merge with data on cty level
-    df <- merge(df, map)
+    df <- join(df, map, multiple = TRUE)
 
     # Pivot longer to convert new "regions" as rows
     df <- df |>
